@@ -1,0 +1,39 @@
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- Base application theme with DarkActionBar -->
+    <style name="Theme.FoodRecipeApp" parent="Theme.MaterialComponents.DayNight.DarkActionBar">
+        <!-- Primary brand color -->
+        <item name="colorPrimary">@color/purple_500</item>
+        <item name="colorPrimaryVariant">@color/purple_700</item>
+        <item name="colorOnPrimary">@color/white</item>
+
+        <!-- Secondary brand color -->
+        <item name="colorSecondary">@color/teal_200</item>
+        <item name="colorSecondaryVariant">@color/teal_700</item>
+        <item name="colorOnSecondary">@color/black</item>
+
+        <!-- Status bar color -->
+        <item name="android:statusBarColor">?attr/colorPrimaryVariant</item>
+
+        <!-- Customize ActionBar appearance -->
+        <item name="android:actionBarStyle">@style/CustomActionBar</item>
+        <item name="android:toolbarStyle">@style/CustomToolbar</item>
+    </style>
+
+    <!-- Custom ActionBar with padding -->
+    <style name="CustomActionBar" parent="Widget.MaterialComponents.ActionBar.Solid">
+        <item name="android:paddingStart">16dp</item>
+        <item name="android:paddingEnd">16dp</item>
+        <item name="android:paddingTop">8dp</item>
+        <item name="android:paddingBottom">8dp</item>
+        <item name="android:elevation">4dp</item> <!-- Adds slight shadow for depth -->
+    </style>
+
+    <!-- Custom Toolbar (If using Toolbar instead of default ActionBar) -->
+    <style name="CustomToolbar" parent="Widget.MaterialComponents.Toolbar">
+        <item name="android:paddingStart">16dp</item>
+        <item name="android:paddingEnd">16dp</item>
+        <item name="android:paddingTop">8dp</item>
+        <item name="android:paddingBottom">8dp</item>
+        <item name="android:elevation">4dp</item>
+    </style>
+</resources>
