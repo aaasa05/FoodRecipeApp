@@ -1,17 +1,22 @@
 package com.asa.foodrecipeapp
 
 import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import android.widget.Button
 import android.widget.ListView
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.launch
 
 class MainActivity : AppCompatActivity() {
 
     private lateinit var recipeList: MutableList<Recipe>
     private lateinit var adapter: RecipeAdapter
-    private lateinit var recipePrefs: RecipePrefs
+    private lateinit var database: AppDatabase
 
     // Register for activity results
     private val addRecipeLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
@@ -19,9 +24,19 @@ class MainActivity : AppCompatActivity() {
             val data = result.data
             val title = data?.getStringExtra("title") ?: ""
             val description = data?.getStringExtra("description") ?: ""
-            recipeList.add(Recipe(title, description))
-            updateAdapter() // Refresh the adapter with the updated list
-            recipePrefs.saveRecipes(recipeList) // Save to SharedPreferences
+            val imageUris = data?.getParcelableArrayListExtra<Uri>("imageUris") ?: ArrayList()
+
+            lifecycleScope.launch(Dispatchers.IO) {
+                // Insert the recipe
+                val recipeId = database.recipeDao().insertRecipe(Recipe(title = title, description = description))
+
+                // Insert the images
+                imageUris.forEach { uri ->
+                    database.recipeDao().insertImage(RecipeImage(recipeId = recipeId, imageUri = uri.toString()))
+                }
+
+                loadRecipes()
+            }
         }
     }
 
@@ -31,10 +46,24 @@ class MainActivity : AppCompatActivity() {
             val position = data?.getIntExtra("position", -1) ?: -1
             val title = data?.getStringExtra("title") ?: ""
             val description = data?.getStringExtra("description") ?: ""
+            val imageUris = data?.getParcelableArrayListExtra<Uri>("imageUris") ?: ArrayList()
+
             if (position != -1) {
-                recipeList[position] = Recipe(title, description)
-                updateAdapter() // Refresh the adapter with the updated list
-                recipePrefs.saveRecipes(recipeList) // Save to SharedPreferences
+                val recipe = recipeList[position]
+                lifecycleScope.launch(Dispatchers.IO) {
+                    // Update the recipe
+                    database.recipeDao().updateRecipe(Recipe(id = recipe.id, title = title, description = description))
+
+                    // Delete existing images for the recipe
+                    database.recipeDao().deleteImagesForRecipe(recipe.id)
+
+                    // Insert the new images
+                    imageUris.forEach { uri ->
+                        database.recipeDao().insertImage(RecipeImage(recipeId = recipe.id, imageUri = uri.toString()))
+                    }
+
+                    loadRecipes()
+                }
             }
         }
     }
@@ -43,21 +72,11 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        // Initialize SharedPreferences helper
-        recipePrefs = RecipePrefs(this)
+        // Initialize Room Database
+        database = AppDatabase.getDatabase(this)
 
-        // Load recipes from SharedPreferences
-        recipeList = recipePrefs.getRecipes().toMutableList()
-
-        // If no recipes are found, initialize with default recipes
-        if (recipeList.isEmpty()) {
-            recipeList = mutableListOf(
-                Recipe("Pasta", "Delicious Italian pasta with tomato sauce."),
-                Recipe("Pizza", "Classic Margherita pizza with fresh basil."),
-                Recipe("Burger", "Juicy beef burger with cheese and veggies.")
-            )
-            recipePrefs.saveRecipes(recipeList) // Save default recipes
-        }
+        // Initialize the recipe list
+        recipeList = mutableListOf()
 
         // Initialize the adapter
         updateAdapter()
@@ -65,6 +84,9 @@ class MainActivity : AppCompatActivity() {
         // Get the ListView and set the adapter
         val recipeListView: ListView = findViewById(R.id.recipeListView)
         recipeListView.adapter = adapter
+
+        // Load recipes
+        loadRecipes()
 
         // Add Button Click Listener
         val addButton: Button = findViewById(R.id.addButton)
@@ -74,19 +96,30 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    // Helper function to load recipes from the database
+    private fun loadRecipes() {
+        lifecycleScope.launch {
+            database.recipeDao().getAllRecipes().collect { recipes ->
+                recipeList.clear()
+                recipeList.addAll(recipes)
+                updateAdapter()
+            }
+        }
+    }
+
     // Helper function to update the adapter
     private fun updateAdapter() {
         adapter = RecipeAdapter(
             this,
             recipeList,
             onDeleteClickListener = { position ->
-                // Handle Delete Button Click
-                recipeList.removeAt(position)
-                updateAdapter() // Refresh the adapter with the updated list
-                recipePrefs.saveRecipes(recipeList) // Save to SharedPreferences
+                val recipe = recipeList[position]
+                lifecycleScope.launch(Dispatchers.IO) {
+                    database.recipeDao().deleteRecipe(recipe.id)
+                    database.recipeDao().deleteImagesForRecipe(recipe.id)
+                }
             },
             onEditClickListener = { position ->
-                // Handle Edit Button Click
                 val recipe = recipeList[position]
                 val intent = Intent(this, EditRecipeActivity::class.java).apply {
                     putExtra("position", position)
@@ -96,11 +129,9 @@ class MainActivity : AppCompatActivity() {
                 editRecipeLauncher.launch(intent)
             },
             onItemClickListener = { position ->
-                // Handle Item Click for Details
                 val recipe = recipeList[position]
                 val intent = Intent(this, RecipeDetailActivity::class.java).apply {
-                    putExtra("title", recipe.title)
-                    putExtra("description", recipe.description)
+                    putExtra("recipeId", recipe.id)
                 }
                 startActivity(intent)
             }

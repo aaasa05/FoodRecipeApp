@@ -11,7 +11,6 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:hint="Enter Recipe Title"
-        android:layout_marginTop="80dp"
         android:layout_marginBottom="16dp" />
 
     <!-- Input for Recipe Description -->
@@ -20,6 +19,22 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:hint="Enter Recipe Description"
+        android:layout_marginBottom="16dp" />
+
+    <!-- Add Image Button -->
+    <Button
+        android:id="@+id/addImageButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Add Image"
+        android:layout_marginBottom="16dp" />
+
+    <!-- Container for Selected Images -->
+    <LinearLayout
+        android:id="@+id/imageContainer"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
         android:layout_marginBottom="16dp" />
 
     <!-- Save Button -->
