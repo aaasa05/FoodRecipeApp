@@ -11,6 +11,8 @@ import com.bumptech.glide.Glide
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
+import android.util.Log
+import android.widget.Toast
 
 class RecipeDetailActivity : AppCompatActivity() {
 
@@ -19,6 +21,8 @@ class RecipeDetailActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_recipe_detail)
+
+        setTitle("Recipe Details")
 
         // Initialize Room Database
         database = AppDatabase.getDatabase(this)
@@ -44,14 +48,40 @@ class RecipeDetailActivity : AppCompatActivity() {
                             val imageContainer = findViewById<LinearLayout>(R.id.imageContainer)
                             imageContainer.removeAllViews() // Clear existing views
                             images.forEach { image ->
-                                val imageView = ImageView(this@RecipeDetailActivity)
-                                imageView.layoutParams = LinearLayout.LayoutParams(
-                                    LinearLayout.LayoutParams.MATCH_PARENT,
-                                    400 // Set a fixed height for the image
-                                )
-                                imageView.adjustViewBounds = true
-                                Glide.with(this@RecipeDetailActivity).load(Uri.parse(image.imageUri)).into(imageView)
-                                imageContainer.addView(imageView)
+                                try {
+                                    val imageView = ImageView(this@RecipeDetailActivity)
+
+                                    // Now we can safely use a larger height value
+                                    imageView.layoutParams = LinearLayout.LayoutParams(
+                                        LinearLayout.LayoutParams.MATCH_PARENT,
+                                        800  // Increased height value
+                                    )
+
+                                    // Add margins for better spacing
+                                    val params = imageView.layoutParams as LinearLayout.LayoutParams
+                                    params.setMargins(0, 0, 0, 24)  // Add margin at the bottom
+
+                                    imageView.adjustViewBounds = true
+                                    imageView.scaleType = ImageView.ScaleType.FIT_CENTER
+
+                                    val uri = Uri.parse(image.imageUri)
+
+                                    // Log the URI for debugging
+                                    Log.d("RecipeDetailActivity", "Loading image from URI: $uri")
+
+                                    // Add error handling to Glide
+                                    Glide.with(this@RecipeDetailActivity)
+                                        .load(uri)
+                                        .error(android.R.drawable.ic_dialog_alert)  // Show an icon if loading fails
+                                        .into(imageView)
+
+                                    imageContainer.addView(imageView)
+                                } catch (e: Exception) {
+                                    Log.e("RecipeDetailActivity", "Error loading image: ${e.message}", e)
+                                    Toast.makeText(this@RecipeDetailActivity,
+                                        "Failed to load an image",
+                                        Toast.LENGTH_SHORT).show()
+                                }
                             }
                         }
                     }

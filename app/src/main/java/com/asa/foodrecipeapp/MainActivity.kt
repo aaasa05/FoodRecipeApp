@@ -26,6 +26,9 @@ class MainActivity : AppCompatActivity() {
             val description = data?.getStringExtra("description") ?: ""
             val imageUris = data?.getParcelableArrayListExtra<Uri>("imageUris") ?: ArrayList()
 
+            // Take persistent permissions before saving
+            takePersistentUriPermissions(imageUris)
+
             lifecycleScope.launch(Dispatchers.IO) {
                 // Insert the recipe
                 val recipeId = database.recipeDao().insertRecipe(Recipe(title = title, description = description))
@@ -48,6 +51,9 @@ class MainActivity : AppCompatActivity() {
             val description = data?.getStringExtra("description") ?: ""
             val imageUris = data?.getParcelableArrayListExtra<Uri>("imageUris") ?: ArrayList()
 
+            // Take persistent permissions
+            takePersistentUriPermissions(imageUris)
+
             if (position != -1) {
                 val recipe = recipeList[position]
                 lifecycleScope.launch(Dispatchers.IO) {
@@ -68,9 +74,12 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+
+        setTitle("Recipe List")
 
         // Initialize Room Database
         database = AppDatabase.getDatabase(this)
@@ -139,4 +148,19 @@ class MainActivity : AppCompatActivity() {
         val recipeListView: ListView = findViewById(R.id.recipeListView)
         recipeListView.adapter = adapter
     }
+
+    private fun takePersistentUriPermissions(imageUris: ArrayList<Uri>) {
+        imageUris.forEach { uri ->
+            try {
+                contentResolver.takePersistableUriPermission(
+                    uri,
+                    Intent.FLAG_GRANT_READ_URI_PERMISSION
+                )
+            } catch (e: SecurityException) {
+                // Log the error but continue with other URIs
+                e.printStackTrace()
+            }
+        }
+    }
+
 }

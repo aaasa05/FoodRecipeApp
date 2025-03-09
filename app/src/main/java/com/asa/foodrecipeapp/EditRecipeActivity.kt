@@ -31,6 +31,8 @@ class EditRecipeActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_edit_recipe)
 
+        setTitle("Edit Recipe")
+
         // Initialize views
         val recipeTitleInput: EditText = findViewById(R.id.recipeTitleInput)
         val recipeDescriptionInput: EditText = findViewById(R.id.recipeDescriptionInput)
@@ -48,8 +50,11 @@ class EditRecipeActivity : AppCompatActivity() {
 
         // Add Image Button Click Listener
         addImageButton.setOnClickListener {
-            val intent = Intent(Intent.ACTION_PICK)
+            val intent = Intent(Intent.ACTION_OPEN_DOCUMENT)
+            intent.addCategory(Intent.CATEGORY_OPENABLE)
             intent.type = "image/*"
+            intent.addFlags(Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION)
+            intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
             pickImageLauncher.launch(intent)
         }
 
