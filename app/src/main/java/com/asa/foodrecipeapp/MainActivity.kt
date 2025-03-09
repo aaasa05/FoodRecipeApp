@@ -134,6 +134,7 @@ class MainActivity : AppCompatActivity() {
                     putExtra("position", position)
                     putExtra("title", recipe.title)
                     putExtra("description", recipe.description)
+                    putExtra("recipeId", recipe.id)  // Pass the recipe ID
                 }
                 editRecipeLauncher.launch(intent)
             },
